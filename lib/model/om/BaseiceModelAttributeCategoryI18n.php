@@ -25,6 +25,12 @@ abstract class BaseiceModelAttributeCategoryI18n extends BaseObject  implements 
   protected static $peer;
 
   /**
+   * The flag var to prevent infinit loop in deep copy
+   * @var       boolean
+   */
+  protected $startCopy = false;
+
+  /**
    * The value for the id field.
    * @var        int
    */
@@ -416,7 +422,7 @@ abstract class BaseiceModelAttributeCategoryI18n extends BaseObject  implements 
         $con->commit();
       }
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -498,7 +504,7 @@ abstract class BaseiceModelAttributeCategoryI18n extends BaseObject  implements 
       $con->commit();
       return $affectedRows;
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -537,29 +543,116 @@ abstract class BaseiceModelAttributeCategoryI18n extends BaseObject  implements 
         $this->seticeModelAttributeCategory($this->aiceModelAttributeCategory);
       }
 
-
-      // If this object has been modified, then save it to the database.
-      if ($this->isModified())
+      if ($this->isNew() || $this->isModified())
       {
+        // persist changes
         if ($this->isNew())
         {
-          $criteria = $this->buildCriteria();
-          $pk = BasePeer::doInsert($criteria, $con);
-          $affectedRows += 1;
-          $this->setNew(false);
+          $this->doInsert($con);
         }
         else
         {
-          $affectedRows += iceModelAttributeCategoryI18nPeer::doUpdate($this, $con);
+          $this->doUpdate($con);
         }
-
-        $this->resetModified(); // [HL] After being saved an object is no longer 'modified'
+        $affectedRows += 1;
+        $this->resetModified();
       }
 
       $this->alreadyInSave = false;
 
     }
     return $affectedRows;
+  }
+
+  /**
+   * Insert the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @throws     PropelException
+   * @see        doSave()
+   */
+  protected function doInsert(PropelPDO $con)
+  {
+    $modifiedColumns = array();
+    $index = 0;
+
+
+     // check the columns in natural order for more readable SQL queries
+    if ($this->isColumnModified(iceModelAttributeCategoryI18nPeer::ID))
+    {
+      $modifiedColumns[':p' . $index++]  = '`ID`';
+    }
+    if ($this->isColumnModified(iceModelAttributeCategoryI18nPeer::NAME))
+    {
+      $modifiedColumns[':p' . $index++]  = '`NAME`';
+    }
+    if ($this->isColumnModified(iceModelAttributeCategoryI18nPeer::NAME_TRANSLIT))
+    {
+      $modifiedColumns[':p' . $index++]  = '`NAME_TRANSLIT`';
+    }
+    if ($this->isColumnModified(iceModelAttributeCategoryI18nPeer::SLUG))
+    {
+      $modifiedColumns[':p' . $index++]  = '`SLUG`';
+    }
+    if ($this->isColumnModified(iceModelAttributeCategoryI18nPeer::CULTURE))
+    {
+      $modifiedColumns[':p' . $index++]  = '`CULTURE`';
+    }
+
+    $sql = sprintf(
+      'INSERT INTO `attribute_category_i18n` (%s) VALUES (%s)',
+      implode(', ', $modifiedColumns),
+      implode(', ', array_keys($modifiedColumns))
+    );
+
+    try
+    {
+      $stmt = $con->prepare($sql);
+      foreach ($modifiedColumns as $identifier => $columnName)
+      {
+        switch ($columnName)
+        {
+          case '`ID`':
+            $stmt->bindValue($identifier, $this->id, PDO::PARAM_INT);
+            break;
+          case '`NAME`':
+            $stmt->bindValue($identifier, $this->name, PDO::PARAM_STR);
+            break;
+          case '`NAME_TRANSLIT`':
+            $stmt->bindValue($identifier, $this->name_translit, PDO::PARAM_STR);
+            break;
+          case '`SLUG`':
+            $stmt->bindValue($identifier, $this->slug, PDO::PARAM_STR);
+            break;
+          case '`CULTURE`':
+            $stmt->bindValue($identifier, $this->culture, PDO::PARAM_STR);
+            break;
+        }
+      }
+      $stmt->execute();
+    }
+    catch (Exception $e)
+    {
+      Propel::log($e->getMessage(), Propel::LOG_ERR);
+      throw new PropelException(sprintf('Unable to execute INSERT statement [%s]', $sql), $e);
+    }
+
+    $this->setNew(false);
+  }
+
+  /**
+   * Update the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @see        doSave()
+   */
+  protected function doUpdate(PropelPDO $con)
+  {
+    $selectCriteria = $this->buildPkeyCriteria();
+    $valuesCriteria = $this->buildCriteria();
+    BasePeer::doUpdate($selectCriteria, $valuesCriteria, $con);
   }
 
   /**
@@ -903,6 +996,19 @@ abstract class BaseiceModelAttributeCategoryI18n extends BaseObject  implements 
     $copyObj->setNameTranslit($this->getNameTranslit());
     $copyObj->setSlug($this->getSlug());
     $copyObj->setCulture($this->getCulture());
+
+    if ($deepCopy && !$this->startCopy)
+    {
+      // important: temporarily setNew(false) because this affects the behavior of
+      // the getter/setter methods for fkey referrer objects.
+      $copyObj->setNew(false);
+      // store object hash to prevent cycle
+      $this->startCopy = true;
+
+      //unflag object copy
+      $this->startCopy = false;
+    }
+
     if ($makeNew)
     {
       $copyObj->setNew(true);

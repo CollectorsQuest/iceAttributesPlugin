@@ -49,402 +49,514 @@
  */
 abstract class BaseiceModelAttributeFilterQuery extends ModelCriteria
 {
-    
-    /**
-     * Initializes internal state of BaseiceModelAttributeFilterQuery object.
-     *
-     * @param     string $dbName The dabase name
-     * @param     string $modelName The phpName of a model, e.g. 'Book'
-     * @param     string $modelAlias The alias for the model in this query, e.g. 'b'
-     */
-    public function __construct($dbName = 'propel', $modelName = 'iceModelAttributeFilter', $modelAlias = null)
+  
+  /**
+   * Initializes internal state of BaseiceModelAttributeFilterQuery object.
+   *
+   * @param     string $dbName The dabase name
+   * @param     string $modelName The phpName of a model, e.g. 'Book'
+   * @param     string $modelAlias The alias for the model in this query, e.g. 'b'
+   */
+  public function __construct($dbName = 'propel', $modelName = 'iceModelAttributeFilter', $modelAlias = null)
+  {
+    parent::__construct($dbName, $modelName, $modelAlias);
+  }
+
+  /**
+   * Returns a new iceModelAttributeFilterQuery object.
+   *
+   * @param     string $modelAlias The alias of a model in the query
+   * @param     Criteria $criteria Optional Criteria to build the query from
+   *
+   * @return    iceModelAttributeFilterQuery
+   */
+  public static function create($modelAlias = null, $criteria = null)
+  {
+    if ($criteria instanceof iceModelAttributeFilterQuery)
     {
-        parent::__construct($dbName, $modelName, $modelAlias);
+      return $criteria;
     }
-
-    /**
-     * Returns a new iceModelAttributeFilterQuery object.
-     *
-     * @param     string $modelAlias The alias of a model in the query
-     * @param     Criteria $criteria Optional Criteria to build the query from
-     *
-     * @return    iceModelAttributeFilterQuery
-     */
-    public static function create($modelAlias = null, $criteria = null)
+    $query = new iceModelAttributeFilterQuery();
+    if (null !== $modelAlias)
     {
-        if ($criteria instanceof iceModelAttributeFilterQuery) {
-            return $criteria;
-        }
-        $query = new iceModelAttributeFilterQuery();
-        if (null !== $modelAlias) {
-            $query->setModelAlias($modelAlias);
-        }
-        if ($criteria instanceof Criteria) {
-            $query->mergeWith($criteria);
-        }
-        return $query;
+      $query->setModelAlias($modelAlias);
     }
-
-    /**
-     * Find object by primary key
-     * Use instance pooling to avoid a database query if the object exists
-     * <code>
-     * $obj  = $c->findPk(12, $con);
-     * </code>
-     * @param     mixed $key Primary key to use for the query
-     * @param     PropelPDO $con an optional connection object
-     *
-     * @return    iceModelAttributeFilter|array|mixed the result, formatted by the current formatter
-     */
-    public function findPk($key, $con = null)
+    if ($criteria instanceof Criteria)
     {
-        if ((null !== ($obj = iceModelAttributeFilterPeer::getInstanceFromPool((string) $key))) && $this->getFormatter()->isObjectFormatter()) {
-            // the object is alredy in the instance pool
-            return $obj;
-        } else {
-            // the object has not been requested yet, or the formatter is not an object formatter
-            $criteria = $this->isKeepQuery() ? clone $this : $this;
-            $stmt = $criteria
-                ->filterByPrimaryKey($key)
-                ->getSelectStatement($con);
-            return $criteria->getFormatter()->init($criteria)->formatOne($stmt);
-        }
+      $query->mergeWith($criteria);
     }
+    return $query;
+  }
 
-    /**
-     * Find objects by primary key
-     * <code>
-     * $objs = $c->findPks(array(12, 56, 832), $con);
-     * </code>
-     * @param     array $keys Primary keys to use for the query
-     * @param     PropelPDO $con an optional connection object
-     *
-     * @return    PropelObjectCollection|array|mixed the list of results, formatted by the current formatter
-     */
-    public function findPks($keys, $con = null)
+  /**
+   * Find object by primary key.
+   * Propel uses the instance pool to skip the database if the object exists.
+   * Go fast if the query is untouched.
+   *
+   * <code>
+   * $obj  = $c->findPk(12, $con);
+   * </code>
+   *
+   * @param     mixed $key Primary key to use for the query
+   * @param     PropelPDO $con an optional connection object
+   *
+   * @return    iceModelAttributeFilter|array|mixed the result, formatted by the current formatter
+   */
+  public function findPk($key, $con = null)
+  {
+    if ($key === null)
     {
-        $criteria = $this->isKeepQuery() ? clone $this : $this;
-        return $this
-            ->filterByPrimaryKeys($keys)
-            ->find($con);
+      return null;
     }
-
-    /**
-     * Filter the query by primary key
-     *
-     * @param     mixed $key Primary key to use for the query
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByPrimaryKey($key)
+    if ((null !== ($obj = iceModelAttributeFilterPeer::getInstanceFromPool((string) $key))) && !$this->formatter)
     {
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $key, Criteria::EQUAL);
+      // the object is alredy in the instance pool
+      return $obj;
     }
-
-    /**
-     * Filter the query by a list of primary keys
-     *
-     * @param     array $keys The list of primary key to use for the query
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByPrimaryKeys($keys)
+    if ($con === null)
     {
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $keys, Criteria::IN);
+      $con = Propel::getConnection(iceModelAttributeFilterPeer::DATABASE_NAME, Propel::CONNECTION_READ);
     }
-
-    /**
-     * Filter the query on the id column
-     *
-     * Example usage:
-     * <code>
-     * $query->filterById(1234); // WHERE id = 1234
-     * $query->filterById(array(12, 34)); // WHERE id IN (12, 34)
-     * $query->filterById(array('min' => 12)); // WHERE id > 12
-     * </code>
-     *
-     * @param     mixed $id The value to use as filter.
-     *              Use scalar values for equality.
-     *              Use array values for in_array() equivalent.
-     *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
-     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterById($id = null, $comparison = null)
-    {
-        if (is_array($id) && null === $comparison) {
-            $comparison = Criteria::IN;
-        }
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $id, $comparison);
+    $this->basePreSelect($con);
+    if ($this->formatter || $this->modelAlias || $this->with || $this->select
+     || $this->selectColumns || $this->asColumns || $this->selectModifiers
+     || $this->map || $this->having || $this->joins) {
+      return $this->findPkComplex($key, $con);
     }
-
-    /**
-     * Filter the query on the attribute_id column
-     *
-     * Example usage:
-     * <code>
-     * $query->filterByAttributeId(1234); // WHERE attribute_id = 1234
-     * $query->filterByAttributeId(array(12, 34)); // WHERE attribute_id IN (12, 34)
-     * $query->filterByAttributeId(array('min' => 12)); // WHERE attribute_id > 12
-     * </code>
-     *
-     * @see       filterByiceModelAttribute()
-     *
-     * @param     mixed $attributeId The value to use as filter.
-     *              Use scalar values for equality.
-     *              Use array values for in_array() equivalent.
-     *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
-     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByAttributeId($attributeId = null, $comparison = null)
+    else
     {
-        if (is_array($attributeId)) {
-            $useMinMax = false;
-            if (isset($attributeId['min'])) {
-                $this->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $attributeId['min'], Criteria::GREATER_EQUAL);
-                $useMinMax = true;
-            }
-            if (isset($attributeId['max'])) {
-                $this->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $attributeId['max'], Criteria::LESS_EQUAL);
-                $useMinMax = true;
-            }
-            if ($useMinMax) {
-                return $this;
-            }
-            if (null === $comparison) {
-                $comparison = Criteria::IN;
-            }
-        }
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $attributeId, $comparison);
+      return $this->findPkSimple($key, $con);
     }
+  }
 
-    /**
-     * Filter the query on the pattern column
-     *
-     * Example usage:
-     * <code>
-     * $query->filterByPattern('fooValue');   // WHERE pattern = 'fooValue'
-     * $query->filterByPattern('%fooValue%'); // WHERE pattern LIKE '%fooValue%'
-     * </code>
-     *
-     * @param     string $pattern The value to use as filter.
-     *              Accepts wildcards (* and % trigger a LIKE)
-     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByPattern($pattern = null, $comparison = null)
+  /**
+   * Find object by primary key using raw SQL to go fast.
+   * Bypass doSelect() and the object formatter by using generated code.
+   *
+   * @param     mixed $key Primary key to use for the query
+   * @param     PropelPDO $con A connection object
+   *
+   * @return    iceModelAttributeFilter A model object, or null if the key is not found
+   */
+  protected function findPkSimple($key, $con)
+  {
+    $sql = 'SELECT `ID`, `ATTRIBUTE_ID`, `PATTERN`, `REPLACEMENT`, `LIMIT`, `POSITION` FROM `attribute_filter` WHERE `ID` = :p0';
+    try
     {
-        if (null === $comparison) {
-            if (is_array($pattern)) {
-                $comparison = Criteria::IN;
-            } elseif (preg_match('/[\%\*]/', $pattern)) {
-                $pattern = str_replace('*', '%', $pattern);
-                $comparison = Criteria::LIKE;
-            }
-        }
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::PATTERN, $pattern, $comparison);
+      $stmt = $con->prepare($sql);
+      $stmt->bindValue(':p0', $key, PDO::PARAM_INT);
+      $stmt->execute();
     }
-
-    /**
-     * Filter the query on the replacement column
-     *
-     * Example usage:
-     * <code>
-     * $query->filterByReplacement('fooValue');   // WHERE replacement = 'fooValue'
-     * $query->filterByReplacement('%fooValue%'); // WHERE replacement LIKE '%fooValue%'
-     * </code>
-     *
-     * @param     string $replacement The value to use as filter.
-     *              Accepts wildcards (* and % trigger a LIKE)
-     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByReplacement($replacement = null, $comparison = null)
+    catch (Exception $e)
     {
-        if (null === $comparison) {
-            if (is_array($replacement)) {
-                $comparison = Criteria::IN;
-            } elseif (preg_match('/[\%\*]/', $replacement)) {
-                $replacement = str_replace('*', '%', $replacement);
-                $comparison = Criteria::LIKE;
-            }
-        }
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::REPLACEMENT, $replacement, $comparison);
+      Propel::log($e->getMessage(), Propel::LOG_ERR);
+      throw new PropelException(sprintf('Unable to execute SELECT statement [%s]', $sql), $e);
     }
-
-    /**
-     * Filter the query on the limit column
-     *
-     * Example usage:
-     * <code>
-     * $query->filterByLimit(1234); // WHERE limit = 1234
-     * $query->filterByLimit(array(12, 34)); // WHERE limit IN (12, 34)
-     * $query->filterByLimit(array('min' => 12)); // WHERE limit > 12
-     * </code>
-     *
-     * @param     mixed $limit The value to use as filter.
-     *              Use scalar values for equality.
-     *              Use array values for in_array() equivalent.
-     *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
-     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByLimit($limit = null, $comparison = null)
+    $obj = null;
+    if ($row = $stmt->fetch(PDO::FETCH_NUM))
     {
-        if (is_array($limit)) {
-            $useMinMax = false;
-            if (isset($limit['min'])) {
-                $this->addUsingAlias(iceModelAttributeFilterPeer::LIMIT, $limit['min'], Criteria::GREATER_EQUAL);
-                $useMinMax = true;
-            }
-            if (isset($limit['max'])) {
-                $this->addUsingAlias(iceModelAttributeFilterPeer::LIMIT, $limit['max'], Criteria::LESS_EQUAL);
-                $useMinMax = true;
-            }
-            if ($useMinMax) {
-                return $this;
-            }
-            if (null === $comparison) {
-                $comparison = Criteria::IN;
-            }
-        }
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::LIMIT, $limit, $comparison);
+      $obj = new iceModelAttributeFilter();
+      $obj->hydrate($row);
+      iceModelAttributeFilterPeer::addInstanceToPool($obj, (string) $key);
     }
+    $stmt->closeCursor();
 
-    /**
-     * Filter the query on the position column
-     *
-     * Example usage:
-     * <code>
-     * $query->filterByPosition(1234); // WHERE position = 1234
-     * $query->filterByPosition(array(12, 34)); // WHERE position IN (12, 34)
-     * $query->filterByPosition(array('min' => 12)); // WHERE position > 12
-     * </code>
-     *
-     * @param     mixed $position The value to use as filter.
-     *              Use scalar values for equality.
-     *              Use array values for in_array() equivalent.
-     *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
-     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByPosition($position = null, $comparison = null)
+    return $obj;
+  }
+
+  /**
+   * Find object by primary key.
+   *
+   * @param     mixed $key Primary key to use for the query
+   * @param     PropelPDO $con A connection object
+   *
+   * @return    iceModelAttributeFilter|array|mixed the result, formatted by the current formatter
+   */
+  protected function findPkComplex($key, $con)
+  {
+    // As the query uses a PK condition, no limit(1) is necessary.
+    $criteria = $this->isKeepQuery() ? clone $this : $this;
+    $stmt = $criteria
+      ->filterByPrimaryKey($key)
+      ->doSelect($con);
+    return $criteria->getFormatter()->init($criteria)->formatOne($stmt);
+  }
+
+  /**
+   * Find objects by primary key
+   * <code>
+   * $objs = $c->findPks(array(12, 56, 832), $con);
+   * </code>
+   * @param     array $keys Primary keys to use for the query
+   * @param     PropelPDO $con an optional connection object
+   *
+   * @return    PropelObjectCollection|array|mixed the list of results, formatted by the current formatter
+   */
+  public function findPks($keys, $con = null)
+  {
+    if ($con === null)
     {
-        if (is_array($position)) {
-            $useMinMax = false;
-            if (isset($position['min'])) {
-                $this->addUsingAlias(iceModelAttributeFilterPeer::POSITION, $position['min'], Criteria::GREATER_EQUAL);
-                $useMinMax = true;
-            }
-            if (isset($position['max'])) {
-                $this->addUsingAlias(iceModelAttributeFilterPeer::POSITION, $position['max'], Criteria::LESS_EQUAL);
-                $useMinMax = true;
-            }
-            if ($useMinMax) {
-                return $this;
-            }
-            if (null === $comparison) {
-                $comparison = Criteria::IN;
-            }
-        }
-        return $this->addUsingAlias(iceModelAttributeFilterPeer::POSITION, $position, $comparison);
+      $con = Propel::getConnection($this->getDbName(), Propel::CONNECTION_READ);
     }
+    $this->basePreSelect($con);
+    $criteria = $this->isKeepQuery() ? clone $this : $this;
+    $stmt = $criteria
+      ->filterByPrimaryKeys($keys)
+      ->doSelect($con);
+    return $criteria->getFormatter()->init($criteria)->format($stmt);
+  }
 
-    /**
-     * Filter the query by a related iceModelAttribute object
-     *
-     * @param     iceModelAttribute|PropelCollection $iceModelAttribute The related object(s) to use as filter
-     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function filterByiceModelAttribute($iceModelAttribute, $comparison = null)
+  /**
+   * Filter the query by primary key
+   *
+   * @param     mixed $key Primary key to use for the query
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByPrimaryKey($key)
+  {
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $key, Criteria::EQUAL);
+  }
+
+  /**
+   * Filter the query by a list of primary keys
+   *
+   * @param     array $keys The list of primary key to use for the query
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByPrimaryKeys($keys)
+  {
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $keys, Criteria::IN);
+  }
+
+  /**
+   * Filter the query on the id column
+   *
+   * Example usage:
+   * <code>
+   * $query->filterById(1234); // WHERE id = 1234
+   * $query->filterById(array(12, 34)); // WHERE id IN (12, 34)
+   * $query->filterById(array('min' => 12)); // WHERE id > 12
+   * </code>
+   *
+   * @param     mixed $id The value to use as filter.
+   *              Use scalar values for equality.
+   *              Use array values for in_array() equivalent.
+   *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
+   * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterById($id = null, $comparison = null)
+  {
+    if (is_array($id) && null === $comparison)
     {
-        if ($iceModelAttribute instanceof iceModelAttribute) {
-            return $this
-                ->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $iceModelAttribute->getId(), $comparison);
-        } elseif ($iceModelAttribute instanceof PropelCollection) {
-            if (null === $comparison) {
-                $comparison = Criteria::IN;
-            }
-            return $this
-                ->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $iceModelAttribute->toKeyValue('PrimaryKey', 'Id'), $comparison);
-        } else {
-            throw new PropelException('filterByiceModelAttribute() only accepts arguments of type iceModelAttribute or PropelCollection');
-        }
+      $comparison = Criteria::IN;
     }
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $id, $comparison);
+  }
 
-    /**
-     * Adds a JOIN clause to the query using the iceModelAttribute relation
-     *
-     * @param     string $relationAlias optional alias for the relation
-     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function joiniceModelAttribute($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+  /**
+   * Filter the query on the attribute_id column
+   *
+   * Example usage:
+   * <code>
+   * $query->filterByAttributeId(1234); // WHERE attribute_id = 1234
+   * $query->filterByAttributeId(array(12, 34)); // WHERE attribute_id IN (12, 34)
+   * $query->filterByAttributeId(array('min' => 12)); // WHERE attribute_id > 12
+   * </code>
+   *
+   * @see       filterByiceModelAttribute()
+   *
+   * @param     mixed $attributeId The value to use as filter.
+   *              Use scalar values for equality.
+   *              Use array values for in_array() equivalent.
+   *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
+   * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByAttributeId($attributeId = null, $comparison = null)
+  {
+    if (is_array($attributeId))
     {
-        $tableMap = $this->getTableMap();
-        $relationMap = $tableMap->getRelation('iceModelAttribute');
-
-        // create a ModelJoin object for this join
-        $join = new ModelJoin();
-        $join->setJoinType($joinType);
-        $join->setRelationMap($relationMap, $this->useAliasInSQL ? $this->getModelAlias() : null, $relationAlias);
-        if ($previousJoin = $this->getPreviousJoin()) {
-            $join->setPreviousJoin($previousJoin);
-        }
-
-        // add the ModelJoin to the current object
-        if($relationAlias) {
-            $this->addAlias($relationAlias, $relationMap->getRightTable()->getName());
-            $this->addJoinObject($join, $relationAlias);
-        } else {
-            $this->addJoinObject($join, 'iceModelAttribute');
-        }
-
+      $useMinMax = false;
+      if (isset($attributeId['min']))
+      {
+        $this->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $attributeId['min'], Criteria::GREATER_EQUAL);
+        $useMinMax = true;
+      }
+      if (isset($attributeId['max']))
+      {
+        $this->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $attributeId['max'], Criteria::LESS_EQUAL);
+        $useMinMax = true;
+      }
+      if ($useMinMax)
+      {
         return $this;
+      }
+      if (null === $comparison)
+      {
+        $comparison = Criteria::IN;
+      }
     }
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $attributeId, $comparison);
+  }
 
-    /**
-     * Use the iceModelAttribute relation iceModelAttribute object
-     *
-     * @see       useQuery()
-     *
-     * @param     string $relationAlias optional alias for the relation,
-     *                                   to be used as main alias in the secondary query
-     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
-     *
-     * @return    iceModelAttributeQuery A secondary query class using the current class as primary query
-     */
-    public function useiceModelAttributeQuery($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+  /**
+   * Filter the query on the pattern column
+   *
+   * Example usage:
+   * <code>
+   * $query->filterByPattern('fooValue');   // WHERE pattern = 'fooValue'
+   * $query->filterByPattern('%fooValue%'); // WHERE pattern LIKE '%fooValue%'
+   * </code>
+   *
+   * @param     string $pattern The value to use as filter.
+   *              Accepts wildcards (* and % trigger a LIKE)
+   * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByPattern($pattern = null, $comparison = null)
+  {
+    if (null === $comparison)
     {
-        return $this
-            ->joiniceModelAttribute($relationAlias, $joinType)
-            ->useQuery($relationAlias ? $relationAlias : 'iceModelAttribute', 'iceModelAttributeQuery');
+      if (is_array($pattern))
+      {
+        $comparison = Criteria::IN;
+      }
+      elseif (preg_match('/[\%\*]/', $pattern))
+      {
+        $pattern = str_replace('*', '%', $pattern);
+        $comparison = Criteria::LIKE;
+      }
     }
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::PATTERN, $pattern, $comparison);
+  }
 
-    /**
-     * Exclude object from result
-     *
-     * @param     iceModelAttributeFilter $iceModelAttributeFilter Object to remove from the list of results
-     *
-     * @return    iceModelAttributeFilterQuery The current query, for fluid interface
-     */
-    public function prune($iceModelAttributeFilter = null)
+  /**
+   * Filter the query on the replacement column
+   *
+   * Example usage:
+   * <code>
+   * $query->filterByReplacement('fooValue');   // WHERE replacement = 'fooValue'
+   * $query->filterByReplacement('%fooValue%'); // WHERE replacement LIKE '%fooValue%'
+   * </code>
+   *
+   * @param     string $replacement The value to use as filter.
+   *              Accepts wildcards (* and % trigger a LIKE)
+   * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByReplacement($replacement = null, $comparison = null)
+  {
+    if (null === $comparison)
     {
-        if ($iceModelAttributeFilter) {
-            $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $iceModelAttributeFilter->getId(), Criteria::NOT_EQUAL);
-        }
+      if (is_array($replacement))
+      {
+        $comparison = Criteria::IN;
+      }
+      elseif (preg_match('/[\%\*]/', $replacement))
+      {
+        $replacement = str_replace('*', '%', $replacement);
+        $comparison = Criteria::LIKE;
+      }
+    }
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::REPLACEMENT, $replacement, $comparison);
+  }
 
+  /**
+   * Filter the query on the limit column
+   *
+   * Example usage:
+   * <code>
+   * $query->filterByLimit(1234); // WHERE limit = 1234
+   * $query->filterByLimit(array(12, 34)); // WHERE limit IN (12, 34)
+   * $query->filterByLimit(array('min' => 12)); // WHERE limit > 12
+   * </code>
+   *
+   * @param     mixed $limit The value to use as filter.
+   *              Use scalar values for equality.
+   *              Use array values for in_array() equivalent.
+   *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
+   * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByLimit($limit = null, $comparison = null)
+  {
+    if (is_array($limit))
+    {
+      $useMinMax = false;
+      if (isset($limit['min']))
+      {
+        $this->addUsingAlias(iceModelAttributeFilterPeer::LIMIT, $limit['min'], Criteria::GREATER_EQUAL);
+        $useMinMax = true;
+      }
+      if (isset($limit['max']))
+      {
+        $this->addUsingAlias(iceModelAttributeFilterPeer::LIMIT, $limit['max'], Criteria::LESS_EQUAL);
+        $useMinMax = true;
+      }
+      if ($useMinMax)
+      {
         return $this;
+      }
+      if (null === $comparison)
+      {
+        $comparison = Criteria::IN;
+      }
     }
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::LIMIT, $limit, $comparison);
+  }
+
+  /**
+   * Filter the query on the position column
+   *
+   * Example usage:
+   * <code>
+   * $query->filterByPosition(1234); // WHERE position = 1234
+   * $query->filterByPosition(array(12, 34)); // WHERE position IN (12, 34)
+   * $query->filterByPosition(array('min' => 12)); // WHERE position > 12
+   * </code>
+   *
+   * @param     mixed $position The value to use as filter.
+   *              Use scalar values for equality.
+   *              Use array values for in_array() equivalent.
+   *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
+   * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByPosition($position = null, $comparison = null)
+  {
+    if (is_array($position))
+    {
+      $useMinMax = false;
+      if (isset($position['min']))
+      {
+        $this->addUsingAlias(iceModelAttributeFilterPeer::POSITION, $position['min'], Criteria::GREATER_EQUAL);
+        $useMinMax = true;
+      }
+      if (isset($position['max']))
+      {
+        $this->addUsingAlias(iceModelAttributeFilterPeer::POSITION, $position['max'], Criteria::LESS_EQUAL);
+        $useMinMax = true;
+      }
+      if ($useMinMax)
+      {
+        return $this;
+      }
+      if (null === $comparison)
+      {
+        $comparison = Criteria::IN;
+      }
+    }
+    return $this->addUsingAlias(iceModelAttributeFilterPeer::POSITION, $position, $comparison);
+  }
+
+  /**
+   * Filter the query by a related iceModelAttribute object
+   *
+   * @param     iceModelAttribute|PropelCollection $iceModelAttribute The related object(s) to use as filter
+   * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function filterByiceModelAttribute($iceModelAttribute, $comparison = null)
+  {
+    if ($iceModelAttribute instanceof iceModelAttribute)
+    {
+      return $this
+        ->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $iceModelAttribute->getId(), $comparison);
+    }
+    elseif ($iceModelAttribute instanceof PropelCollection)
+    {
+      if (null === $comparison)
+      {
+        $comparison = Criteria::IN;
+      }
+      return $this
+        ->addUsingAlias(iceModelAttributeFilterPeer::ATTRIBUTE_ID, $iceModelAttribute->toKeyValue('PrimaryKey', 'Id'), $comparison);
+    }
+    else
+    {
+      throw new PropelException('filterByiceModelAttribute() only accepts arguments of type iceModelAttribute or PropelCollection');
+    }
+  }
+
+  /**
+   * Adds a JOIN clause to the query using the iceModelAttribute relation
+   *
+   * @param     string $relationAlias optional alias for the relation
+   * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function joiniceModelAttribute($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+  {
+    $tableMap = $this->getTableMap();
+    $relationMap = $tableMap->getRelation('iceModelAttribute');
+
+    // create a ModelJoin object for this join
+    $join = new ModelJoin();
+    $join->setJoinType($joinType);
+    $join->setRelationMap($relationMap, $this->useAliasInSQL ? $this->getModelAlias() : null, $relationAlias);
+    if ($previousJoin = $this->getPreviousJoin())
+    {
+      $join->setPreviousJoin($previousJoin);
+    }
+
+    // add the ModelJoin to the current object
+    if($relationAlias)
+    {
+      $this->addAlias($relationAlias, $relationMap->getRightTable()->getName());
+      $this->addJoinObject($join, $relationAlias);
+    }
+    else
+    {
+      $this->addJoinObject($join, 'iceModelAttribute');
+    }
+
+    return $this;
+  }
+
+  /**
+   * Use the iceModelAttribute relation iceModelAttribute object
+   *
+   * @see       useQuery()
+   *
+   * @param     string $relationAlias optional alias for the relation,
+   *                                   to be used as main alias in the secondary query
+   * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+   *
+   * @return    iceModelAttributeQuery A secondary query class using the current class as primary query
+   */
+  public function useiceModelAttributeQuery($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+  {
+    return $this
+      ->joiniceModelAttribute($relationAlias, $joinType)
+      ->useQuery($relationAlias ? $relationAlias : 'iceModelAttribute', 'iceModelAttributeQuery');
+  }
+
+  /**
+   * Exclude object from result
+   *
+   * @param     iceModelAttributeFilter $iceModelAttributeFilter Object to remove from the list of results
+   *
+   * @return    iceModelAttributeFilterQuery The current query, for fluid interface
+   */
+  public function prune($iceModelAttributeFilter = null)
+  {
+    if ($iceModelAttributeFilter)
+    {
+      $this->addUsingAlias(iceModelAttributeFilterPeer::ID, $iceModelAttributeFilter->getId(), Criteria::NOT_EQUAL);
+    }
+
+    return $this;
+  }
 
 }

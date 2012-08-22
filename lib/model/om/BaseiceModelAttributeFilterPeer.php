@@ -20,9 +20,6 @@ abstract class BaseiceModelAttributeFilterPeer
   /** the related Propel class for this table */
   const OM_CLASS = 'iceModelAttributeFilter';
 
-  /** A class that can be returned by this peer. */
-  const CLASS_DEFAULT = 'plugins.iceAttributesPlugin.lib.model.iceModelAttributeFilter';
-
   /** the related TableMap class for this table */
   const TM_CLASS = 'iceModelAttributeFilterTableMap';
 
@@ -454,7 +451,7 @@ abstract class BaseiceModelAttributeFilterPeer
     $results = array();
   
     // set the class once to avoid overhead in the loop
-    $cls = iceModelAttributeFilterPeer::getOMClass(false);
+    $cls = iceModelAttributeFilterPeer::getOMClass();
     // populate the object(s)
     while ($row = $stmt->fetch(PDO::FETCH_NUM))
     {
@@ -615,7 +612,7 @@ abstract class BaseiceModelAttributeFilterPeer
       else
       {
 
-        $cls = iceModelAttributeFilterPeer::getOMClass(false);
+        $cls = iceModelAttributeFilterPeer::getOMClass();
 
         $obj1 = new $cls();
         $obj1->hydrate($row);
@@ -629,7 +626,7 @@ abstract class BaseiceModelAttributeFilterPeer
         if (!$obj2)
         {
 
-          $cls = iceModelAttributePeer::getOMClass(false);
+          $cls = iceModelAttributePeer::getOMClass();
 
           $obj2 = new $cls();
           $obj2->hydrate($row, $startcol);
@@ -757,7 +754,7 @@ abstract class BaseiceModelAttributeFilterPeer
       }
       else
       {
-        $cls = iceModelAttributeFilterPeer::getOMClass(false);
+        $cls = iceModelAttributeFilterPeer::getOMClass();
 
         $obj1 = new $cls();
         $obj1->hydrate($row);
@@ -773,7 +770,7 @@ abstract class BaseiceModelAttributeFilterPeer
         if (!$obj2)
         {
 
-          $cls = iceModelAttributePeer::getOMClass(false);
+          $cls = iceModelAttributePeer::getOMClass();
 
           $obj2 = new $cls();
           $obj2->hydrate($row, $startcol2);
@@ -817,17 +814,12 @@ abstract class BaseiceModelAttributeFilterPeer
   /**
    * The class that the Peer will make instances of.
    *
-   * If $withPrefix is true, the returned path
-   * uses a dot-path notation which is tranalted into a path
-   * relative to a location on the PHP include_path.
-   * (e.g. path.to.MyClass -> 'path/to/MyClass.php')
    *
-   * @param      boolean $withPrefix Whether or not to return the path with the class name
-   * @return     string path.to.ClassName
+   * @return     string ClassName
    */
-  public static function getOMClass($withPrefix = true)
+  public static function getOMClass()
   {
-    return $withPrefix ? iceModelAttributeFilterPeer::CLASS_DEFAULT : iceModelAttributeFilterPeer::OM_CLASS;
+    return iceModelAttributeFilterPeer::OM_CLASS;
   }
 
   /**

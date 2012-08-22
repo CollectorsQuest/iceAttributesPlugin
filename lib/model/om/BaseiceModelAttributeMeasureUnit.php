@@ -25,6 +25,12 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
   protected static $peer;
 
   /**
+   * The flag var to prevent infinit loop in deep copy
+   * @var       boolean
+   */
+  protected $startCopy = false;
+
+  /**
    * The value for the id field.
    * @var        int
    */
@@ -65,6 +71,18 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
    * @var array Current I18N objects
    */
   protected $current_i18n = array();
+
+  /**
+   * An array of objects scheduled for deletion.
+   * @var    array
+   */
+  protected $iceModelAttributesScheduledForDeletion = null;
+
+  /**
+   * An array of objects scheduled for deletion.
+   * @var    array
+   */
+  protected $iceModelAttributeMeasureUnitI18nsScheduledForDeletion = null;
 
   /**
    * Get the [id] column value.
@@ -271,7 +289,7 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
         $con->commit();
       }
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -353,7 +371,7 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
       $con->commit();
       return $affectedRows;
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -378,33 +396,30 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
     {
       $this->alreadyInSave = true;
 
-      if ($this->isNew() )
+      if ($this->isNew() || $this->isModified())
       {
-        $this->modifiedColumns[] = iceModelAttributeMeasureUnitPeer::ID;
-      }
-
-      // If this object has been modified, then save it to the database.
-      if ($this->isModified())
-      {
+        // persist changes
         if ($this->isNew())
         {
-          $criteria = $this->buildCriteria();
-          if ($criteria->keyContainsValue(iceModelAttributeMeasureUnitPeer::ID) )
-          {
-            throw new PropelException('Cannot insert a value for auto-increment primary key ('.iceModelAttributeMeasureUnitPeer::ID.')');
-          }
-
-          $pk = BasePeer::doInsert($criteria, $con);
-          $affectedRows = 1;
-          $this->setId($pk);  //[IMV] update autoincrement primary key
-          $this->setNew(false);
+          $this->doInsert($con);
         }
         else
         {
-          $affectedRows = iceModelAttributeMeasureUnitPeer::doUpdate($this, $con);
+          $this->doUpdate($con);
         }
+        $affectedRows += 1;
+        $this->resetModified();
+      }
 
-        $this->resetModified(); // [HL] After being saved an object is no longer 'modified'
+      if ($this->iceModelAttributesScheduledForDeletion !== null)
+      {
+        if (!$this->iceModelAttributesScheduledForDeletion->isEmpty())
+        {
+          iceModelAttributeQuery::create()
+            ->filterByPrimaryKeys($this->iceModelAttributesScheduledForDeletion->getPrimaryKeys(false))
+            ->delete($con);
+          $this->iceModelAttributesScheduledForDeletion = null;
+        }
       }
 
       if ($this->colliceModelAttributes !== null)
@@ -415,6 +430,17 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
           {
             $affectedRows += $referrerFK->save($con);
           }
+        }
+      }
+
+      if ($this->iceModelAttributeMeasureUnitI18nsScheduledForDeletion !== null)
+      {
+        if (!$this->iceModelAttributeMeasureUnitI18nsScheduledForDeletion->isEmpty())
+        {
+          iceModelAttributeMeasureUnitI18nQuery::create()
+            ->filterByPrimaryKeys($this->iceModelAttributeMeasureUnitI18nsScheduledForDeletion->getPrimaryKeys(false))
+            ->delete($con);
+          $this->iceModelAttributeMeasureUnitI18nsScheduledForDeletion = null;
         }
       }
 
@@ -434,6 +460,84 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
 
     }
     return $affectedRows;
+  }
+
+  /**
+   * Insert the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @throws     PropelException
+   * @see        doSave()
+   */
+  protected function doInsert(PropelPDO $con)
+  {
+    $modifiedColumns = array();
+    $index = 0;
+
+    $this->modifiedColumns[] = iceModelAttributeMeasureUnitPeer::ID;
+    if (null !== $this->id)
+    {
+      throw new PropelException('Cannot insert a value for auto-increment primary key (' . iceModelAttributeMeasureUnitPeer::ID . ')');
+    }
+
+     // check the columns in natural order for more readable SQL queries
+    if ($this->isColumnModified(iceModelAttributeMeasureUnitPeer::ID))
+    {
+      $modifiedColumns[':p' . $index++]  = '`ID`';
+    }
+
+    $sql = sprintf(
+      'INSERT INTO `attribute_measure_unit` (%s) VALUES (%s)',
+      implode(', ', $modifiedColumns),
+      implode(', ', array_keys($modifiedColumns))
+    );
+
+    try
+    {
+      $stmt = $con->prepare($sql);
+      foreach ($modifiedColumns as $identifier => $columnName)
+      {
+        switch ($columnName)
+        {
+          case '`ID`':
+            $stmt->bindValue($identifier, $this->id, PDO::PARAM_INT);
+            break;
+        }
+      }
+      $stmt->execute();
+    }
+    catch (Exception $e)
+    {
+      Propel::log($e->getMessage(), Propel::LOG_ERR);
+      throw new PropelException(sprintf('Unable to execute INSERT statement [%s]', $sql), $e);
+    }
+
+    try
+    {
+      $pk = $con->lastInsertId();
+    }
+    catch (Exception $e)
+    {
+      throw new PropelException('Unable to get autoincrement id.', $e);
+    }
+    $this->setId($pk);
+
+    $this->setNew(false);
+  }
+
+  /**
+   * Update the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @see        doSave()
+   */
+  protected function doUpdate(PropelPDO $con)
+  {
+    $selectCriteria = $this->buildPkeyCriteria();
+    $valuesCriteria = $this->buildCriteria();
+    BasePeer::doUpdate($selectCriteria, $valuesCriteria, $con);
   }
 
   /**
@@ -743,11 +847,13 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
   public function copyInto($copyObj, $deepCopy = false, $makeNew = true)
   {
 
-    if ($deepCopy)
+    if ($deepCopy && !$this->startCopy)
     {
       // important: temporarily setNew(false) because this affects the behavior of
       // the getter/setter methods for fkey referrer objects.
       $copyObj->setNew(false);
+      // store object hash to prevent cycle
+      $this->startCopy = true;
 
       foreach ($this->geticeModelAttributes() as $relObj)
       {
@@ -763,6 +869,8 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
         }
       }
 
+      //unflag object copy
+      $this->startCopy = false;
     }
 
     if ($makeNew)
@@ -907,6 +1015,32 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
   }
 
   /**
+   * Sets a collection of iceModelAttribute objects related by a one-to-many relationship
+   * to the current object.
+   * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
+   * and new objects from the given Propel collection.
+   *
+   * @param      PropelCollection $iceModelAttributes A Propel collection.
+   * @param      PropelPDO $con Optional connection object
+   */
+  public function seticeModelAttributes(PropelCollection $iceModelAttributes, PropelPDO $con = null)
+  {
+    $this->iceModelAttributesScheduledForDeletion = $this->geticeModelAttributes(new Criteria(), $con)->diff($iceModelAttributes, false);
+
+    foreach ($iceModelAttributes as $iceModelAttribute)
+    {
+      // Fix issue with collection modified by reference
+      if ($iceModelAttribute->isNew())
+      {
+        $iceModelAttribute->seticeModelAttributeMeasureUnit($this);
+      }
+      $this->addiceModelAttribute($iceModelAttribute);
+    }
+
+    $this->colliceModelAttributes = $iceModelAttributes;
+  }
+
+  /**
    * Returns the number of related iceModelAttribute objects.
    *
    * @param      Criteria $criteria
@@ -955,11 +1089,19 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
       $this->initiceModelAttributes();
     }
     if (!$this->colliceModelAttributes->contains($l)) { // only add it if the **same** object is not already associated
-      $this->colliceModelAttributes[]= $l;
-      $l->seticeModelAttributeMeasureUnit($this);
+      $this->doAddiceModelAttribute($l);
     }
 
     return $this;
+  }
+
+  /**
+   * @param  iceModelAttribute $iceModelAttribute The iceModelAttribute object to add.
+   */
+  protected function doAddiceModelAttribute($iceModelAttribute)
+  {
+    $this->colliceModelAttributes[]= $iceModelAttribute;
+    $iceModelAttribute->seticeModelAttributeMeasureUnit($this);
   }
 
   /**
@@ -1037,6 +1179,32 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
   }
 
   /**
+   * Sets a collection of iceModelAttributeMeasureUnitI18n objects related by a one-to-many relationship
+   * to the current object.
+   * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
+   * and new objects from the given Propel collection.
+   *
+   * @param      PropelCollection $iceModelAttributeMeasureUnitI18ns A Propel collection.
+   * @param      PropelPDO $con Optional connection object
+   */
+  public function seticeModelAttributeMeasureUnitI18ns(PropelCollection $iceModelAttributeMeasureUnitI18ns, PropelPDO $con = null)
+  {
+    $this->iceModelAttributeMeasureUnitI18nsScheduledForDeletion = $this->geticeModelAttributeMeasureUnitI18ns(new Criteria(), $con)->diff($iceModelAttributeMeasureUnitI18ns, false);
+
+    foreach ($iceModelAttributeMeasureUnitI18ns as $iceModelAttributeMeasureUnitI18n)
+    {
+      // Fix issue with collection modified by reference
+      if ($iceModelAttributeMeasureUnitI18n->isNew())
+      {
+        $iceModelAttributeMeasureUnitI18n->seticeModelAttributeMeasureUnit($this);
+      }
+      $this->addiceModelAttributeMeasureUnitI18n($iceModelAttributeMeasureUnitI18n);
+    }
+
+    $this->colliceModelAttributeMeasureUnitI18ns = $iceModelAttributeMeasureUnitI18ns;
+  }
+
+  /**
    * Returns the number of related iceModelAttributeMeasureUnitI18n objects.
    *
    * @param      Criteria $criteria
@@ -1085,11 +1253,19 @@ abstract class BaseiceModelAttributeMeasureUnit extends BaseObject  implements P
       $this->initiceModelAttributeMeasureUnitI18ns();
     }
     if (!$this->colliceModelAttributeMeasureUnitI18ns->contains($l)) { // only add it if the **same** object is not already associated
-      $this->colliceModelAttributeMeasureUnitI18ns[]= $l;
-      $l->seticeModelAttributeMeasureUnit($this);
+      $this->doAddiceModelAttributeMeasureUnitI18n($l);
     }
 
     return $this;
+  }
+
+  /**
+   * @param  iceModelAttributeMeasureUnitI18n $iceModelAttributeMeasureUnitI18n The iceModelAttributeMeasureUnitI18n object to add.
+   */
+  protected function doAddiceModelAttributeMeasureUnitI18n($iceModelAttributeMeasureUnitI18n)
+  {
+    $this->colliceModelAttributeMeasureUnitI18ns[]= $iceModelAttributeMeasureUnitI18n;
+    $iceModelAttributeMeasureUnitI18n->seticeModelAttributeMeasureUnit($this);
   }
 
   /**

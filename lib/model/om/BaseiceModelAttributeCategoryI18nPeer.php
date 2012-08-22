@@ -20,9 +20,6 @@ abstract class BaseiceModelAttributeCategoryI18nPeer
   /** the related Propel class for this table */
   const OM_CLASS = 'iceModelAttributeCategoryI18n';
 
-  /** A class that can be returned by this peer. */
-  const CLASS_DEFAULT = 'plugins.iceAttributesPlugin.lib.model.iceModelAttributeCategoryI18n';
-
   /** the related TableMap class for this table */
   const TM_CLASS = 'iceModelAttributeCategoryI18nTableMap';
 
@@ -449,7 +446,7 @@ abstract class BaseiceModelAttributeCategoryI18nPeer
     $results = array();
   
     // set the class once to avoid overhead in the loop
-    $cls = iceModelAttributeCategoryI18nPeer::getOMClass(false);
+    $cls = iceModelAttributeCategoryI18nPeer::getOMClass();
     // populate the object(s)
     while ($row = $stmt->fetch(PDO::FETCH_NUM))
     {
@@ -610,7 +607,7 @@ abstract class BaseiceModelAttributeCategoryI18nPeer
       else
       {
 
-        $cls = iceModelAttributeCategoryI18nPeer::getOMClass(false);
+        $cls = iceModelAttributeCategoryI18nPeer::getOMClass();
 
         $obj1 = new $cls();
         $obj1->hydrate($row);
@@ -624,7 +621,7 @@ abstract class BaseiceModelAttributeCategoryI18nPeer
         if (!$obj2)
         {
 
-          $cls = iceModelAttributeCategoryPeer::getOMClass(false);
+          $cls = iceModelAttributeCategoryPeer::getOMClass();
 
           $obj2 = new $cls();
           $obj2->hydrate($row, $startcol);
@@ -752,7 +749,7 @@ abstract class BaseiceModelAttributeCategoryI18nPeer
       }
       else
       {
-        $cls = iceModelAttributeCategoryI18nPeer::getOMClass(false);
+        $cls = iceModelAttributeCategoryI18nPeer::getOMClass();
 
         $obj1 = new $cls();
         $obj1->hydrate($row);
@@ -768,7 +765,7 @@ abstract class BaseiceModelAttributeCategoryI18nPeer
         if (!$obj2)
         {
 
-          $cls = iceModelAttributeCategoryPeer::getOMClass(false);
+          $cls = iceModelAttributeCategoryPeer::getOMClass();
 
           $obj2 = new $cls();
           $obj2->hydrate($row, $startcol2);
@@ -812,17 +809,12 @@ abstract class BaseiceModelAttributeCategoryI18nPeer
   /**
    * The class that the Peer will make instances of.
    *
-   * If $withPrefix is true, the returned path
-   * uses a dot-path notation which is tranalted into a path
-   * relative to a location on the PHP include_path.
-   * (e.g. path.to.MyClass -> 'path/to/MyClass.php')
    *
-   * @param      boolean $withPrefix Whether or not to return the path with the class name
-   * @return     string path.to.ClassName
+   * @return     string ClassName
    */
-  public static function getOMClass($withPrefix = true)
+  public static function getOMClass()
   {
-    return $withPrefix ? iceModelAttributeCategoryI18nPeer::CLASS_DEFAULT : iceModelAttributeCategoryI18nPeer::OM_CLASS;
+    return iceModelAttributeCategoryI18nPeer::OM_CLASS;
   }
 
   /**

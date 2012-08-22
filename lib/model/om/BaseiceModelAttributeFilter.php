@@ -25,6 +25,12 @@ abstract class BaseiceModelAttributeFilter extends BaseObject  implements Persis
   protected static $peer;
 
   /**
+   * The flag var to prevent infinit loop in deep copy
+   * @var       boolean
+   */
+  protected $startCopy = false;
+
+  /**
    * The value for the id field.
    * @var        int
    */
@@ -489,7 +495,7 @@ abstract class BaseiceModelAttributeFilter extends BaseObject  implements Persis
         $con->commit();
       }
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -571,7 +577,7 @@ abstract class BaseiceModelAttributeFilter extends BaseObject  implements Persis
       $con->commit();
       return $affectedRows;
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -610,39 +616,138 @@ abstract class BaseiceModelAttributeFilter extends BaseObject  implements Persis
         $this->seticeModelAttribute($this->aiceModelAttribute);
       }
 
-      if ($this->isNew() )
+      if ($this->isNew() || $this->isModified())
       {
-        $this->modifiedColumns[] = iceModelAttributeFilterPeer::ID;
-      }
-
-      // If this object has been modified, then save it to the database.
-      if ($this->isModified())
-      {
+        // persist changes
         if ($this->isNew())
         {
-          $criteria = $this->buildCriteria();
-          if ($criteria->keyContainsValue(iceModelAttributeFilterPeer::ID) )
-          {
-            throw new PropelException('Cannot insert a value for auto-increment primary key ('.iceModelAttributeFilterPeer::ID.')');
-          }
-
-          $pk = BasePeer::doInsert($criteria, $con);
-          $affectedRows += 1;
-          $this->setId($pk);  //[IMV] update autoincrement primary key
-          $this->setNew(false);
+          $this->doInsert($con);
         }
         else
         {
-          $affectedRows += iceModelAttributeFilterPeer::doUpdate($this, $con);
+          $this->doUpdate($con);
         }
-
-        $this->resetModified(); // [HL] After being saved an object is no longer 'modified'
+        $affectedRows += 1;
+        $this->resetModified();
       }
 
       $this->alreadyInSave = false;
 
     }
     return $affectedRows;
+  }
+
+  /**
+   * Insert the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @throws     PropelException
+   * @see        doSave()
+   */
+  protected function doInsert(PropelPDO $con)
+  {
+    $modifiedColumns = array();
+    $index = 0;
+
+    $this->modifiedColumns[] = iceModelAttributeFilterPeer::ID;
+    if (null !== $this->id)
+    {
+      throw new PropelException('Cannot insert a value for auto-increment primary key (' . iceModelAttributeFilterPeer::ID . ')');
+    }
+
+     // check the columns in natural order for more readable SQL queries
+    if ($this->isColumnModified(iceModelAttributeFilterPeer::ID))
+    {
+      $modifiedColumns[':p' . $index++]  = '`ID`';
+    }
+    if ($this->isColumnModified(iceModelAttributeFilterPeer::ATTRIBUTE_ID))
+    {
+      $modifiedColumns[':p' . $index++]  = '`ATTRIBUTE_ID`';
+    }
+    if ($this->isColumnModified(iceModelAttributeFilterPeer::PATTERN))
+    {
+      $modifiedColumns[':p' . $index++]  = '`PATTERN`';
+    }
+    if ($this->isColumnModified(iceModelAttributeFilterPeer::REPLACEMENT))
+    {
+      $modifiedColumns[':p' . $index++]  = '`REPLACEMENT`';
+    }
+    if ($this->isColumnModified(iceModelAttributeFilterPeer::LIMIT))
+    {
+      $modifiedColumns[':p' . $index++]  = '`LIMIT`';
+    }
+    if ($this->isColumnModified(iceModelAttributeFilterPeer::POSITION))
+    {
+      $modifiedColumns[':p' . $index++]  = '`POSITION`';
+    }
+
+    $sql = sprintf(
+      'INSERT INTO `attribute_filter` (%s) VALUES (%s)',
+      implode(', ', $modifiedColumns),
+      implode(', ', array_keys($modifiedColumns))
+    );
+
+    try
+    {
+      $stmt = $con->prepare($sql);
+      foreach ($modifiedColumns as $identifier => $columnName)
+      {
+        switch ($columnName)
+        {
+          case '`ID`':
+            $stmt->bindValue($identifier, $this->id, PDO::PARAM_INT);
+            break;
+          case '`ATTRIBUTE_ID`':
+            $stmt->bindValue($identifier, $this->attribute_id, PDO::PARAM_INT);
+            break;
+          case '`PATTERN`':
+            $stmt->bindValue($identifier, $this->pattern, PDO::PARAM_STR);
+            break;
+          case '`REPLACEMENT`':
+            $stmt->bindValue($identifier, $this->replacement, PDO::PARAM_STR);
+            break;
+          case '`LIMIT`':
+            $stmt->bindValue($identifier, $this->limit, PDO::PARAM_INT);
+            break;
+          case '`POSITION`':
+            $stmt->bindValue($identifier, $this->position, PDO::PARAM_INT);
+            break;
+        }
+      }
+      $stmt->execute();
+    }
+    catch (Exception $e)
+    {
+      Propel::log($e->getMessage(), Propel::LOG_ERR);
+      throw new PropelException(sprintf('Unable to execute INSERT statement [%s]', $sql), $e);
+    }
+
+    try
+    {
+      $pk = $con->lastInsertId();
+    }
+    catch (Exception $e)
+    {
+      throw new PropelException('Unable to get autoincrement id.', $e);
+    }
+    $this->setId($pk);
+
+    $this->setNew(false);
+  }
+
+  /**
+   * Update the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @see        doSave()
+   */
+  protected function doUpdate(PropelPDO $con)
+  {
+    $selectCriteria = $this->buildPkeyCriteria();
+    $valuesCriteria = $this->buildCriteria();
+    BasePeer::doUpdate($selectCriteria, $valuesCriteria, $con);
   }
 
   /**
@@ -988,6 +1093,19 @@ abstract class BaseiceModelAttributeFilter extends BaseObject  implements Persis
     $copyObj->setReplacement($this->getReplacement());
     $copyObj->setLimit($this->getLimit());
     $copyObj->setPosition($this->getPosition());
+
+    if ($deepCopy && !$this->startCopy)
+    {
+      // important: temporarily setNew(false) because this affects the behavior of
+      // the getter/setter methods for fkey referrer objects.
+      $copyObj->setNew(false);
+      // store object hash to prevent cycle
+      $this->startCopy = true;
+
+      //unflag object copy
+      $this->startCopy = false;
+    }
+
     if ($makeNew)
     {
       $copyObj->setNew(true);

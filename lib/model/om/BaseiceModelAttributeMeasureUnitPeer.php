@@ -20,9 +20,6 @@ abstract class BaseiceModelAttributeMeasureUnitPeer
   /** the related Propel class for this table */
   const OM_CLASS = 'iceModelAttributeMeasureUnit';
 
-  /** A class that can be returned by this peer. */
-  const CLASS_DEFAULT = 'plugins.iceAttributesPlugin.lib.model.iceModelAttributeMeasureUnit';
-
   /** the related TableMap class for this table */
   const TM_CLASS = 'iceModelAttributeMeasureUnitTableMap';
 
@@ -435,7 +432,7 @@ abstract class BaseiceModelAttributeMeasureUnitPeer
     $results = array();
   
     // set the class once to avoid overhead in the loop
-    $cls = iceModelAttributeMeasureUnitPeer::getOMClass(false);
+    $cls = iceModelAttributeMeasureUnitPeer::getOMClass();
     // populate the object(s)
     while ($row = $stmt->fetch(PDO::FETCH_NUM))
     {
@@ -514,17 +511,12 @@ abstract class BaseiceModelAttributeMeasureUnitPeer
   /**
    * The class that the Peer will make instances of.
    *
-   * If $withPrefix is true, the returned path
-   * uses a dot-path notation which is tranalted into a path
-   * relative to a location on the PHP include_path.
-   * (e.g. path.to.MyClass -> 'path/to/MyClass.php')
    *
-   * @param      boolean $withPrefix Whether or not to return the path with the class name
-   * @return     string path.to.ClassName
+   * @return     string ClassName
    */
-  public static function getOMClass($withPrefix = true)
+  public static function getOMClass()
   {
-    return $withPrefix ? iceModelAttributeMeasureUnitPeer::CLASS_DEFAULT : iceModelAttributeMeasureUnitPeer::OM_CLASS;
+    return iceModelAttributeMeasureUnitPeer::OM_CLASS;
   }
 
   /**

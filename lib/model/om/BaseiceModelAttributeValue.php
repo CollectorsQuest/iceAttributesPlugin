@@ -25,6 +25,12 @@ abstract class BaseiceModelAttributeValue extends BaseObject  implements Persist
   protected static $peer;
 
   /**
+   * The flag var to prevent infinit loop in deep copy
+   * @var       boolean
+   */
+  protected $startCopy = false;
+
+  /**
    * The value for the id field.
    * @var        int
    */
@@ -616,7 +622,7 @@ abstract class BaseiceModelAttributeValue extends BaseObject  implements Persist
         $con->commit();
       }
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -712,7 +718,7 @@ abstract class BaseiceModelAttributeValue extends BaseObject  implements Persist
       $con->commit();
       return $affectedRows;
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -737,39 +743,145 @@ abstract class BaseiceModelAttributeValue extends BaseObject  implements Persist
     {
       $this->alreadyInSave = true;
 
-      if ($this->isNew() )
+      if ($this->isNew() || $this->isModified())
       {
-        $this->modifiedColumns[] = iceModelAttributeValuePeer::ID;
-      }
-
-      // If this object has been modified, then save it to the database.
-      if ($this->isModified())
-      {
+        // persist changes
         if ($this->isNew())
         {
-          $criteria = $this->buildCriteria();
-          if ($criteria->keyContainsValue(iceModelAttributeValuePeer::ID) )
-          {
-            throw new PropelException('Cannot insert a value for auto-increment primary key ('.iceModelAttributeValuePeer::ID.')');
-          }
-
-          $pk = BasePeer::doInsert($criteria, $con);
-          $affectedRows = 1;
-          $this->setId($pk);  //[IMV] update autoincrement primary key
-          $this->setNew(false);
+          $this->doInsert($con);
         }
         else
         {
-          $affectedRows = iceModelAttributeValuePeer::doUpdate($this, $con);
+          $this->doUpdate($con);
         }
-
-        $this->resetModified(); // [HL] After being saved an object is no longer 'modified'
+        $affectedRows += 1;
+        $this->resetModified();
       }
 
       $this->alreadyInSave = false;
 
     }
     return $affectedRows;
+  }
+
+  /**
+   * Insert the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @throws     PropelException
+   * @see        doSave()
+   */
+  protected function doInsert(PropelPDO $con)
+  {
+    $modifiedColumns = array();
+    $index = 0;
+
+    $this->modifiedColumns[] = iceModelAttributeValuePeer::ID;
+    if (null !== $this->id)
+    {
+      throw new PropelException('Cannot insert a value for auto-increment primary key (' . iceModelAttributeValuePeer::ID . ')');
+    }
+
+     // check the columns in natural order for more readable SQL queries
+    if ($this->isColumnModified(iceModelAttributeValuePeer::ID))
+    {
+      $modifiedColumns[':p' . $index++]  = '`ID`';
+    }
+    if ($this->isColumnModified(iceModelAttributeValuePeer::STRING))
+    {
+      $modifiedColumns[':p' . $index++]  = '`STRING`';
+    }
+    if ($this->isColumnModified(iceModelAttributeValuePeer::NUMERIC))
+    {
+      $modifiedColumns[':p' . $index++]  = '`NUMERIC`';
+    }
+    if ($this->isColumnModified(iceModelAttributeValuePeer::BOOLEAN))
+    {
+      $modifiedColumns[':p' . $index++]  = '`BOOLEAN`';
+    }
+    if ($this->isColumnModified(iceModelAttributeValuePeer::DATE))
+    {
+      $modifiedColumns[':p' . $index++]  = '`DATE`';
+    }
+    if ($this->isColumnModified(iceModelAttributeValuePeer::CREATED_AT))
+    {
+      $modifiedColumns[':p' . $index++]  = '`CREATED_AT`';
+    }
+    if ($this->isColumnModified(iceModelAttributeValuePeer::UPDATED_AT))
+    {
+      $modifiedColumns[':p' . $index++]  = '`UPDATED_AT`';
+    }
+
+    $sql = sprintf(
+      'INSERT INTO `attribute_value` (%s) VALUES (%s)',
+      implode(', ', $modifiedColumns),
+      implode(', ', array_keys($modifiedColumns))
+    );
+
+    try
+    {
+      $stmt = $con->prepare($sql);
+      foreach ($modifiedColumns as $identifier => $columnName)
+      {
+        switch ($columnName)
+        {
+          case '`ID`':
+            $stmt->bindValue($identifier, $this->id, PDO::PARAM_INT);
+            break;
+          case '`STRING`':
+            $stmt->bindValue($identifier, $this->string, PDO::PARAM_STR);
+            break;
+          case '`NUMERIC`':
+            $stmt->bindValue($identifier, $this->numeric, PDO::PARAM_STR);
+            break;
+          case '`BOOLEAN`':
+            $stmt->bindValue($identifier, (int) $this->boolean, PDO::PARAM_INT);
+            break;
+          case '`DATE`':
+            $stmt->bindValue($identifier, $this->date, PDO::PARAM_STR);
+            break;
+          case '`CREATED_AT`':
+            $stmt->bindValue($identifier, $this->created_at, PDO::PARAM_STR);
+            break;
+          case '`UPDATED_AT`':
+            $stmt->bindValue($identifier, $this->updated_at, PDO::PARAM_STR);
+            break;
+        }
+      }
+      $stmt->execute();
+    }
+    catch (Exception $e)
+    {
+      Propel::log($e->getMessage(), Propel::LOG_ERR);
+      throw new PropelException(sprintf('Unable to execute INSERT statement [%s]', $sql), $e);
+    }
+
+    try
+    {
+      $pk = $con->lastInsertId();
+    }
+    catch (Exception $e)
+    {
+      throw new PropelException('Unable to get autoincrement id.', $e);
+    }
+    $this->setId($pk);
+
+    $this->setNew(false);
+  }
+
+  /**
+   * Update the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @see        doSave()
+   */
+  protected function doUpdate(PropelPDO $con)
+  {
+    $selectCriteria = $this->buildPkeyCriteria();
+    $valuesCriteria = $this->buildCriteria();
+    BasePeer::doUpdate($selectCriteria, $valuesCriteria, $con);
   }
 
   /**

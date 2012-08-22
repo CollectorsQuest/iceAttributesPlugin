@@ -25,6 +25,12 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
   protected static $peer;
 
   /**
+   * The flag var to prevent infinit loop in deep copy
+   * @var       boolean
+   */
+  protected $startCopy = false;
+
+  /**
    * The value for the id field.
    * @var        int
    */
@@ -67,6 +73,12 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
    * @var array Current I18N objects
    */
   protected $current_i18n = array();
+
+  /**
+   * An array of objects scheduled for deletion.
+   * @var    array
+   */
+  protected $iceModelAttributeCategoryI18nsScheduledForDeletion = null;
 
   /**
    * Applies default values to this object.
@@ -330,7 +342,7 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
         $con->commit();
       }
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -412,7 +424,7 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
       $con->commit();
       return $affectedRows;
     }
-    catch (PropelException $e)
+    catch (Exception $e)
     {
       $con->rollBack();
       throw $e;
@@ -437,33 +449,30 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
     {
       $this->alreadyInSave = true;
 
-      if ($this->isNew() )
+      if ($this->isNew() || $this->isModified())
       {
-        $this->modifiedColumns[] = iceModelAttributeCategoryPeer::ID;
-      }
-
-      // If this object has been modified, then save it to the database.
-      if ($this->isModified())
-      {
+        // persist changes
         if ($this->isNew())
         {
-          $criteria = $this->buildCriteria();
-          if ($criteria->keyContainsValue(iceModelAttributeCategoryPeer::ID) )
-          {
-            throw new PropelException('Cannot insert a value for auto-increment primary key ('.iceModelAttributeCategoryPeer::ID.')');
-          }
-
-          $pk = BasePeer::doInsert($criteria, $con);
-          $affectedRows = 1;
-          $this->setId($pk);  //[IMV] update autoincrement primary key
-          $this->setNew(false);
+          $this->doInsert($con);
         }
         else
         {
-          $affectedRows = iceModelAttributeCategoryPeer::doUpdate($this, $con);
+          $this->doUpdate($con);
         }
+        $affectedRows += 1;
+        $this->resetModified();
+      }
 
-        $this->resetModified(); // [HL] After being saved an object is no longer 'modified'
+      if ($this->iceModelAttributeCategoryI18nsScheduledForDeletion !== null)
+      {
+        if (!$this->iceModelAttributeCategoryI18nsScheduledForDeletion->isEmpty())
+        {
+          iceModelAttributeCategoryI18nQuery::create()
+            ->filterByPrimaryKeys($this->iceModelAttributeCategoryI18nsScheduledForDeletion->getPrimaryKeys(false))
+            ->delete($con);
+          $this->iceModelAttributeCategoryI18nsScheduledForDeletion = null;
+        }
       }
 
       if ($this->colliceModelAttributeCategoryI18ns !== null)
@@ -482,6 +491,91 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
 
     }
     return $affectedRows;
+  }
+
+  /**
+   * Insert the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @throws     PropelException
+   * @see        doSave()
+   */
+  protected function doInsert(PropelPDO $con)
+  {
+    $modifiedColumns = array();
+    $index = 0;
+
+    $this->modifiedColumns[] = iceModelAttributeCategoryPeer::ID;
+    if (null !== $this->id)
+    {
+      throw new PropelException('Cannot insert a value for auto-increment primary key (' . iceModelAttributeCategoryPeer::ID . ')');
+    }
+
+     // check the columns in natural order for more readable SQL queries
+    if ($this->isColumnModified(iceModelAttributeCategoryPeer::ID))
+    {
+      $modifiedColumns[':p' . $index++]  = '`ID`';
+    }
+    if ($this->isColumnModified(iceModelAttributeCategoryPeer::POSITION))
+    {
+      $modifiedColumns[':p' . $index++]  = '`POSITION`';
+    }
+
+    $sql = sprintf(
+      'INSERT INTO `attribute_category` (%s) VALUES (%s)',
+      implode(', ', $modifiedColumns),
+      implode(', ', array_keys($modifiedColumns))
+    );
+
+    try
+    {
+      $stmt = $con->prepare($sql);
+      foreach ($modifiedColumns as $identifier => $columnName)
+      {
+        switch ($columnName)
+        {
+          case '`ID`':
+            $stmt->bindValue($identifier, $this->id, PDO::PARAM_INT);
+            break;
+          case '`POSITION`':
+            $stmt->bindValue($identifier, $this->position, PDO::PARAM_INT);
+            break;
+        }
+      }
+      $stmt->execute();
+    }
+    catch (Exception $e)
+    {
+      Propel::log($e->getMessage(), Propel::LOG_ERR);
+      throw new PropelException(sprintf('Unable to execute INSERT statement [%s]', $sql), $e);
+    }
+
+    try
+    {
+      $pk = $con->lastInsertId();
+    }
+    catch (Exception $e)
+    {
+      throw new PropelException('Unable to get autoincrement id.', $e);
+    }
+    $this->setId($pk);
+
+    $this->setNew(false);
+  }
+
+  /**
+   * Update the row in the database.
+   *
+   * @param      PropelPDO $con
+   *
+   * @see        doSave()
+   */
+  protected function doUpdate(PropelPDO $con)
+  {
+    $selectCriteria = $this->buildPkeyCriteria();
+    $valuesCriteria = $this->buildCriteria();
+    BasePeer::doUpdate($selectCriteria, $valuesCriteria, $con);
   }
 
   /**
@@ -786,11 +880,13 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
   {
     $copyObj->setPosition($this->getPosition());
 
-    if ($deepCopy)
+    if ($deepCopy && !$this->startCopy)
     {
       // important: temporarily setNew(false) because this affects the behavior of
       // the getter/setter methods for fkey referrer objects.
       $copyObj->setNew(false);
+      // store object hash to prevent cycle
+      $this->startCopy = true;
 
       foreach ($this->geticeModelAttributeCategoryI18ns() as $relObj)
       {
@@ -799,6 +895,8 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
         }
       }
 
+      //unflag object copy
+      $this->startCopy = false;
     }
 
     if ($makeNew)
@@ -939,6 +1037,32 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
   }
 
   /**
+   * Sets a collection of iceModelAttributeCategoryI18n objects related by a one-to-many relationship
+   * to the current object.
+   * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
+   * and new objects from the given Propel collection.
+   *
+   * @param      PropelCollection $iceModelAttributeCategoryI18ns A Propel collection.
+   * @param      PropelPDO $con Optional connection object
+   */
+  public function seticeModelAttributeCategoryI18ns(PropelCollection $iceModelAttributeCategoryI18ns, PropelPDO $con = null)
+  {
+    $this->iceModelAttributeCategoryI18nsScheduledForDeletion = $this->geticeModelAttributeCategoryI18ns(new Criteria(), $con)->diff($iceModelAttributeCategoryI18ns, false);
+
+    foreach ($iceModelAttributeCategoryI18ns as $iceModelAttributeCategoryI18n)
+    {
+      // Fix issue with collection modified by reference
+      if ($iceModelAttributeCategoryI18n->isNew())
+      {
+        $iceModelAttributeCategoryI18n->seticeModelAttributeCategory($this);
+      }
+      $this->addiceModelAttributeCategoryI18n($iceModelAttributeCategoryI18n);
+    }
+
+    $this->colliceModelAttributeCategoryI18ns = $iceModelAttributeCategoryI18ns;
+  }
+
+  /**
    * Returns the number of related iceModelAttributeCategoryI18n objects.
    *
    * @param      Criteria $criteria
@@ -987,11 +1111,19 @@ abstract class BaseiceModelAttributeCategory extends BaseObject  implements Pers
       $this->initiceModelAttributeCategoryI18ns();
     }
     if (!$this->colliceModelAttributeCategoryI18ns->contains($l)) { // only add it if the **same** object is not already associated
-      $this->colliceModelAttributeCategoryI18ns[]= $l;
-      $l->seticeModelAttributeCategory($this);
+      $this->doAddiceModelAttributeCategoryI18n($l);
     }
 
     return $this;
+  }
+
+  /**
+   * @param  iceModelAttributeCategoryI18n $iceModelAttributeCategoryI18n The iceModelAttributeCategoryI18n object to add.
+   */
+  protected function doAddiceModelAttributeCategoryI18n($iceModelAttributeCategoryI18n)
+  {
+    $this->colliceModelAttributeCategoryI18ns[]= $iceModelAttributeCategoryI18n;
+    $iceModelAttributeCategoryI18n->seticeModelAttributeCategory($this);
   }
 
   /**

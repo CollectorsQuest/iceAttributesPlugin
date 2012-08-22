@@ -20,9 +20,6 @@ abstract class BaseiceModelAttributeBooleanPeer
   /** the related Propel class for this table */
   const OM_CLASS = 'iceModelAttributeBoolean';
 
-  /** A class that can be returned by this peer. */
-  const CLASS_DEFAULT = 'plugins.iceAttributesPlugin.lib.model.iceModelAttributeBoolean';
-
   /** the related TableMap class for this table */
   const TM_CLASS = 'iceModelAttributeBooleanTableMap';
 
@@ -444,7 +441,7 @@ abstract class BaseiceModelAttributeBooleanPeer
     $results = array();
   
     // set the class once to avoid overhead in the loop
-    $cls = iceModelAttributeBooleanPeer::getOMClass(false);
+    $cls = iceModelAttributeBooleanPeer::getOMClass();
     // populate the object(s)
     while ($row = $stmt->fetch(PDO::FETCH_NUM))
     {
@@ -523,17 +520,12 @@ abstract class BaseiceModelAttributeBooleanPeer
   /**
    * The class that the Peer will make instances of.
    *
-   * If $withPrefix is true, the returned path
-   * uses a dot-path notation which is tranalted into a path
-   * relative to a location on the PHP include_path.
-   * (e.g. path.to.MyClass -> 'path/to/MyClass.php')
    *
-   * @param      boolean $withPrefix Whether or not to return the path with the class name
-   * @return     string path.to.ClassName
+   * @return     string ClassName
    */
-  public static function getOMClass($withPrefix = true)
+  public static function getOMClass()
   {
-    return $withPrefix ? iceModelAttributeBooleanPeer::CLASS_DEFAULT : iceModelAttributeBooleanPeer::OM_CLASS;
+    return iceModelAttributeBooleanPeer::OM_CLASS;
   }
 
   /**
